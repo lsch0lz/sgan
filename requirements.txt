@@ -5,3 +5,4 @@ Pillow
 six
 torch
 torchvision
+matplotlib

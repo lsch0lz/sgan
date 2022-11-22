@@ -63,7 +63,7 @@ def get_generator(checkpoint):
     return generator
 
 
-def evaluate(args, loader, generator, num_samples):
+def evaluate(args, loader, generator, num_samples, ):
     with torch.no_grad():
         for batch in loader:
             batch = [tensor.cuda() for tensor in batch]
@@ -71,6 +71,7 @@ def evaluate(args, loader, generator, num_samples):
              non_linear_ped, loss_mask, seq_start_end) = batch
 
             for _ in range(1):  # num_samples
+                # TODO: reshape those tensors for cpu support
                 pred_traj_fake_rel = generator(
                     obs_traj, obs_traj_rel, seq_start_end
                 )
@@ -80,15 +81,17 @@ def evaluate(args, loader, generator, num_samples):
                 gt = pred_traj_gt[:, 3, :].data
                 input_a = obs_traj[:, 3, :].data
                 out_a = pred_traj_fake[:, 3, :].data
-                aa = np.concatenate((input_a, gt), axis=0)
-                bb = np.concatenate((input_a, out_a), axis=0)
+                aa = np.concatenate((input_a.cpu(), gt.cpu()), axis=0)
+                bb = np.concatenate((input_a.cpu(), out_a.cpu()), axis=0)
                 global x1, y1
                 ax.set_xlim(-2, 15)
                 ax.set_ylim(-2, 15)
                 x1 = bb[:, 0]
                 y1 = bb[:, 1]
                 l = ax.plot(aa[:, 0], aa[:, 1], '.')
+                plt.savefig('./trajectory_prediction.png')
                 ani = animation.FuncAnimation(fig, update_dot, frames=gen_dot, interval=5)
+                ani.save('./animation.mp4')
                 plt.show()
                 plt.close()
 
