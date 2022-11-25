@@ -15,7 +15,7 @@ parser.add_argument('--model_path', type=str)
 parser.add_argument('--num_samples', default=20, type=int)
 parser.add_argument('--dset_type', default='test', type=str)
 
-total_aa, total_bb = [], []
+gorund_truth_points_total, predicted_points_total = [], []
 xdata0, ydata0 = [], []
 xdata1, ydata1 = [], []
 
@@ -108,22 +108,22 @@ def update_dot(newd):
 def plot():
     global x01, x02, x03, x04, y01, y02, y03, y04, x11, x12, x13, x14, y11, y12, y13, y14
 
-    x01 = total_aa[0][:, 0]
-    y01 = total_aa[0][:, 1]
-    x02 = total_aa[1][:, 0]
-    y02 = total_aa[1][:, 1]
-    x03 = total_aa[2][:, 0]
-    y03 = total_aa[2][:, 1]
-    x04 = total_aa[3][:, 0]
-    y04 = total_aa[3][:, 1]
-    x11 = total_bb[0][:, 0]
-    y11 = total_bb[0][:, 1]
-    x12 = total_bb[1][:, 0]
-    y12 = total_bb[1][:, 1]
-    x13 = total_bb[2][:, 0]
-    y13 = total_bb[2][:, 1]
-    x14 = total_bb[3][:, 0]
-    y14 = total_bb[3][:, 1]
+    x01 = gorund_truth_points_total[0][:, 0]
+    y01 = gorund_truth_points_total[0][:, 1]
+    x02 = gorund_truth_points_total[1][:, 0]
+    y02 = gorund_truth_points_total[1][:, 1]
+    x03 = gorund_truth_points_total[2][:, 0]
+    y03 = gorund_truth_points_total[2][:, 1]
+    x04 = gorund_truth_points_total[3][:, 0]
+    y04 = gorund_truth_points_total[3][:, 1]
+    x11 = predicted_points_total[0][:, 0]
+    y11 = predicted_points_total[0][:, 1]
+    x12 = predicted_points_total[1][:, 0]
+    y12 = predicted_points_total[1][:, 1]
+    x13 = predicted_points_total[2][:, 0]
+    y13 = predicted_points_total[2][:, 1]
+    x14 = predicted_points_total[3][:, 0]
+    y14 = predicted_points_total[3][:, 1]
 
     ani = animation.FuncAnimation(fig, update_dot, frames=gen_dot, interval=5, init_func=init)
     ani.save('./animation.mp4')
@@ -176,11 +176,11 @@ def evaluate(loader, generator):
                 gt = pred_traj_gt[:, 3, :].data
                 input_a = obs_traj[:, 3, :].data
                 out_a = pred_traj_fake[:, 3, :].data
-                aa = np.concatenate((input_a, gt), axis=0)
-                bb = np.concatenate((input_a, out_a), axis=0)
-                global x0, y0, x1, y1, total_aa, total_bb
-                total_aa.append(aa)
-                total_bb.append(bb)
+                ground_truth_point = np.concatenate((input_a, gt), axis=0) # ground truth
+                predicted_point = np.concatenate((input_a, out_a), axis=0) # predicted value
+                global x0, y0, x1, y1, gorund_truth_points_total, predicted_points_total
+                gorund_truth_points_total.append(ground_truth_point)
+                predicted_points_total.append(predicted_point)
 
 
 def main(args):
