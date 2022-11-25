@@ -8,7 +8,6 @@ from matplotlib import animation
 
 from sgan.data.loader import data_loader
 from sgan.models import TrajectoryGenerator
-from sgan.losses import displacement_error, final_displacement_error
 from sgan.utils import relative_to_abs, get_dset_path
 
 parser = argparse.ArgumentParser()
@@ -16,25 +15,122 @@ parser.add_argument('--model_path', type=str)
 parser.add_argument('--num_samples', default=20, type=int)
 parser.add_argument('--dset_type', default='test', type=str)
 
-xdata, ydata = [], []
-x1 = []
-y1 = []
+total_aa, total_bb = [], []
+xdata0, ydata0 = [], []
+xdata1, ydata1 = [], []
+
+xdata2, ydata2 = [], []
+
+xdata3, ydata3 = [], []
+
+xdata4, ydata4 = [], []
+
+xdata5, ydata5 = [], []
+
+xdata6, ydata6 = [], []
+xdata7, ydata7 = [], []
+
+x11, y11, x12, y12, x13, y13, x14, y14 = [], [], [], [], [], [], [], []
+x01, y01, x02, y02, x03, y03, x04, y04 = [], [], [], [], [], [], [], []
+
 aa, bb = [], []
+num_t = 0
 fig, ax = plt.subplots()
-ln, = ax.plot([], [], 'ro')
+
+ln11, = ax.plot([], [], 'b--')
+ln12, = ax.plot([], [], 'g--')
+
+ln21, = ax.plot([], [], 'r--')
+ln22, = ax.plot([], [], 'c--')
+
+ln31, = ax.plot([], [], 'b:')
+ln32, = ax.plot([], [], 'g:')
+
+ln41, = ax.plot([], [], 'r:')
+ln42, = ax.plot([], [], 'c:')
+
+
+def init():
+    ax.set_xlim(-10, 15)
+    ax.set_ylim(-10, 15)
 
 
 def gen_dot():
-    for i in range(0, len(x1)):
-        newdot = [x1[i], y1[i]]
+    for i in range(0, len(x01)):
+        newdot = [x01[i], y01[i]]
         yield newdot
 
 
 def update_dot(newd):
-    xdata.append(newd[0])
-    ydata.append(newd[1])
-    ln.set_data(xdata, ydata)
-    return ln,
+    global num_t
+    if num_t < len(x01):
+        xdata0.append(newd[0])  # x01
+        ydata0.append(newd[1])  # y01
+
+        xdata1.append(x02[num_t])
+        ydata1.append(y02[num_t])
+
+        xdata2.append(x03[num_t])
+        ydata2.append(y03[num_t])
+
+        xdata3.append(x04[num_t])
+        ydata3.append(y04[num_t])
+
+        xdata4.append(x11[num_t])
+        ydata4.append(y11[num_t])
+
+        xdata5.append(x12[num_t])
+        ydata5.append(y12[num_t])
+
+        xdata6.append(x13[num_t])
+        ydata6.append(y13[num_t])
+
+        xdata7.append(x14[num_t])
+        ydata7.append(y14[num_t])
+
+        num_t = num_t + 1
+
+        ln11.set_data(xdata0, ydata0)
+        ln12.set_data(xdata1, ydata1)
+
+        ln21.set_data(xdata2, ydata2)
+        ln22.set_data(xdata3, ydata3)
+
+        ln31.set_data(xdata4, ydata4)
+        ln32.set_data(xdata5, ydata5)
+
+        ln41.set_data(xdata6, ydata6)
+        ln42.set_data(xdata7, ydata7)
+
+        return ln11, ln12, ln21, ln22, ln31, ln32, ln41, ln42
+
+
+def plot():
+    global x01, x02, x03, x04, y01, y02, y03, y04, x11, x12, x13, x14, y11, y12, y13, y14
+
+    x01 = total_aa[0][:, 0]
+    y01 = total_aa[0][:, 1]
+    x02 = total_aa[1][:, 0]
+    y02 = total_aa[1][:, 1]
+    x03 = total_aa[2][:, 0]
+    y03 = total_aa[2][:, 1]
+    x04 = total_aa[3][:, 0]
+    y04 = total_aa[3][:, 1]
+    x11 = total_bb[0][:, 0]
+    y11 = total_bb[0][:, 1]
+    x12 = total_bb[1][:, 0]
+    y12 = total_bb[1][:, 1]
+    x13 = total_bb[2][:, 0]
+    y13 = total_bb[2][:, 1]
+    x14 = total_bb[3][:, 0]
+    y14 = total_bb[3][:, 1]
+
+    ani = animation.FuncAnimation(fig, update_dot, frames=gen_dot, interval=5, init_func=init)
+    ani.save('./animation.mp4')
+    plt.savefig('./trajectory_prediction.png')
+    # you can make the interval bigger to see more clearly ie. interval=500
+    plt.show()
+    plt.close()
 
 
 def get_generator(checkpoint):
@@ -63,7 +159,7 @@ def get_generator(checkpoint):
     return generator
 
 
-def evaluate(args, loader, generator, num_samples, ):
+def evaluate(loader, generator):
     with torch.no_grad():
         for batch in loader:
             batch = [tensor.cuda() for tensor in batch]
@@ -71,7 +167,6 @@ def evaluate(args, loader, generator, num_samples, ):
              non_linear_ped, loss_mask, seq_start_end) = batch
 
             for _ in range(1):  # num_samples
-                # TODO: reshape those tensors for cpu support
                 pred_traj_fake_rel = generator(
                     obs_traj, obs_traj_rel, seq_start_end
                 )
@@ -81,19 +176,11 @@ def evaluate(args, loader, generator, num_samples, ):
                 gt = pred_traj_gt[:, 3, :].data
                 input_a = obs_traj[:, 3, :].data
                 out_a = pred_traj_fake[:, 3, :].data
-                aa = np.concatenate((input_a.cpu(), gt.cpu()), axis=0)
-                bb = np.concatenate((input_a.cpu(), out_a.cpu()), axis=0)
-                global x1, y1
-                ax.set_xlim(-2, 15)
-                ax.set_ylim(-2, 15)
-                x1 = bb[:, 0]
-                y1 = bb[:, 1]
-                l = ax.plot(aa[:, 0], aa[:, 1], '.')
-                plt.savefig('./trajectory_prediction.png')
-                ani = animation.FuncAnimation(fig, update_dot, frames=gen_dot, interval=5)
-                ani.save('./animation.mp4')
-                plt.show()
-                plt.close()
+                aa = np.concatenate((input_a, gt), axis=0)
+                bb = np.concatenate((input_a, out_a), axis=0)
+                global x0, y0, x1, y1, total_aa, total_bb
+                total_aa.append(aa)
+                total_bb.append(bb)
 
 
 def main(args):
@@ -112,7 +199,8 @@ def main(args):
         _args = AttrDict(checkpoint['args'])
         path = get_dset_path(_args.dataset_name, args.dset_type)
         _, loader = data_loader(_args, path)
-        evaluate(_args, loader, generator, args.num_samples)
+        evaluate(loader, generator)
+        plot()
 
 
 if __name__ == '__main__':
