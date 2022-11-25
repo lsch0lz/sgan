@@ -125,7 +125,7 @@ def plot():
     x14 = predicted_points_total[3][:, 0]
     y14 = predicted_points_total[3][:, 1]
 
-    ani = animation.FuncAnimation(fig, update_dot, frames=gen_dot, interval=5, init_func=init)
+    ani = animation.FuncAnimation(fig, update_dot, frames=gen_dot, interval=500, init_func=init)
     ani.save('./animation.mp4')
     plt.savefig('./trajectory_prediction.png')
     # you can make the interval bigger to see more clearly ie. interval=500
@@ -176,8 +176,8 @@ def evaluate(loader, generator):
                 gt = pred_traj_gt[:, 3, :].data
                 input_a = obs_traj[:, 3, :].data
                 out_a = pred_traj_fake[:, 3, :].data
-                ground_truth_point = np.concatenate((input_a, gt), axis=0) # ground truth
-                predicted_point = np.concatenate((input_a, out_a), axis=0) # predicted value
+                ground_truth_point = np.concatenate((input_a.cpu(), gt.cpu()), axis=0) # ground truth
+                predicted_point = np.concatenate((input_a.cpu(), out_a.cpu()), axis=0) # predicted value
                 global x0, y0, x1, y1, gorund_truth_points_total, predicted_points_total
                 gorund_truth_points_total.append(ground_truth_point)
                 predicted_points_total.append(predicted_point)
